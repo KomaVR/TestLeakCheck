@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>VPN Security & Leak Comprehensive Analysis</title>
+  <style>
+    /* Production‑grade styling */
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+    header {
+      background: #007acc;
+      color: #fff;
+      text-align: center;
+      padding: 1em 0;
+      font-size: 1.8em;
+      font-weight: 600;
+    }
+    main {
+      max-width: 1200px;
+      margin: 2em auto;
+      padding: 1em;
+    }
+    section {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 1.5em;
+      padding: 1em 1.5em;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    section h2 {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 0.5em;
+      margin-bottom: 1em;
+      color: #007acc;
+    }
+    .result {
+      font-size: 1em;
+      line-height: 1.5em;
+      word-wrap: break-word;
+    }
+    .result p { margin: 0.5em 0; }
+    .ip { font-weight: bold; color: #007acc; }
+    .error { color: red; }
+    button {
+      background: #007acc;
+      border: none;
+      color: #fff;
+      padding: 0.75em 1.5em;
+      font-size: 1.1em;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      margin: 1.5em auto;
+    }
+    button:hover { background: #005fa3; }
+  </style>
+</head>
+<body>
+  <header>VPN Security & Leak Comprehensive Analysis</header>
+  <main>
+    <button id="startTest">Run All Tests</button>
+
+    <!-- Network/Leak Checks -->
+    <section id="webrtcSection">
+      <h2>1. WebRTC Leak Detection</h2>
+      <div id="webrtcResults" class="result"></div>
+    </section>
+    
+    <section id="dnsSection">
+      <h2>2. DNS Resolution Testing</h2>
+      <div id="dnsResults" class="result"></div>
+    </section>
+    
+    <section id="publicIPSection">
+      <h2>3. Public IP Verification</h2>
+      <div id="publicIPResults" class="result"></div>
+    </section>
+    
+    <section id="stunSection">
+      <h2>4. STUN Server Analysis</h2>
+      <div id="stunResults" class="result"></div>
+    </section>
+    
+    <section id="vpnSecuritySection">
+      <h2>5. VPN Security / Bypass Check</h2>
+      <div id="vpnSecurityResults" class="result"></div>
+    </section>
+    
+    <section id="wsSection">
+      <h2>6. WebSocket Connectivity</h2>
+      <div id="websocketResults" class="result"></div>
+    </section>
+
+    <!-- Browser / System Fingerprinting -->
+    <section id="fingerprintSection">
+      <h2>7. Browser Fingerprinting</h2>
+      <div id="fingerprintResults" class="result"></div>
+    </section>
+    
+    <section id="canvasSection">
+      <h2>8. Canvas Fingerprint Test</h2>
+      <div id="canvasResults" class="result"></div>
+    </section>
+    
+    <section id="webglSection">
+      <h2>9. WebGL Fingerprint Test</h2>
+      <div id="webglResults" class="result"></div>
+    </section>
+    
+    <section id="screenSection">
+      <h2>10. Screen Resolution & Color Depth</h2>
+      <div id="screenResults" class="result"></div>
+    </section>
+    
+    <section id="pluginsSection">
+      <h2>11. Installed Plugins Check</h2>
+      <div id="pluginsResults" class="result"></div>
+    </section>
+
+    <!-- Additional Network Checks -->
+    <section id="latencySection">
+      <h2>12. Latency Tests</h2>
+      <div id="latencyResults" class="result"></div>
+    </section>
+    
+    <section id="reverseDNSSection">
+      <h2>13. Reverse DNS Lookup</h2>
+      <div id="reverseDNSResults" class="result"></div>
+    </section>
+    
+    <section id="geolocationSection">
+      <h2>14. IP Geolocation</h2>
+      <div id="geolocationResults" class="result"></div>
+    </section>
+    
+    <section id="httpHeadersSection">
+      <h2>15. HTTP Header Analysis</h2>
+      <div id="httpHeadersResults" class="result"></div>
+    </section>
+    
+    <section id="extraChecksSection">
+      <h2>16. Additional Security Checks</h2>
+      <div id="extraChecksResults" class="result"></div>
+    </section>
+  </main>
+  
+  <script>
+    /* Global variables to store collected data */
+    const collectedWebRTCIps = {};
+    let publicIpCollected = "";
+    let testResults = {}; // store other test results
+
+    /* Logging helper: writes messages to a section */
+    function log(id, message, isError = false) {
+      const container = document.getElementById(id);
+      const p = document.createElement('p');
+      p.innerHTML = message;
+      if (isError) { p.classList.add('error'); }
+      container.appendChild(p);
+    }
+
+    /* Clear previous results */
+    function clearResults() {
+      const ids = [
+        'webrtcResults','dnsResults','publicIPResults','stunResults',
+        'vpnSecurityResults','websocketResults','fingerprintResults',
+        'canvasResults','webglResults','screenResults','pluginsResults',
+        'latencyResults','reverseDNSResults','geolocationResults',
+        'httpHeadersResults','extraChecksResults'
+      ];
+      ids.forEach(id => { document.getElementById(id).innerHTML = ''; });
+      for (let ip in collectedWebRTCIps) { delete collectedWebRTCIps[ip]; }
+      publicIpCollected = "";
+      testResults = {};
+    }
+
+    /************ Network/Leak Tests ************/
+
+    // 1. WebRTC Leak Detection (IPv4 & IPv6)
+    function detectWebRTCIps() {
+      const RTCPeerConnection = window.RTCPeerConnection ||
+                                window.mozRTCPeerConnection ||
+                                window.webkitRTCPeerConnection;
+      if (!RTCPeerConnection) {
+        log("webrtcResults", "WebRTC is not supported by this browser.", true);
+        return;
+      }
+      // Use multiple STUN servers.
+      const config = { iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun.services.mozilla.com" }
+      ]};
+      const pc = new RTCPeerConnection(config);
+      pc.createDataChannel("");
+      pc.onicecandidate = event => {
+        if (!event || !event.candidate) { pc.close(); return; }
+        const candidate = event.candidate.candidate;
+        // Regex to match IPv4 and IPv6 addresses.
+        const ipRegex = /((\d{1,3}(?:\.\d{1,3}){3})|((?:[a-fA-F0-9]{0,4}:)+[a-fA-F0-9]{0,4}))/g;
+        let match;
+        while ((match = ipRegex.exec(candidate)) !== null) {
+          const ip = match[1];
+          if (!collectedWebRTCIps[ip]) {
+            collectedWebRTCIps[ip] = true;
+            log("webrtcResults", "Detected candidate IP: <span class='ip'>" + ip + "</span>");
+          }
+        }
+      };
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .catch(error => log("webrtcResults", "Offer creation error: " + error, true));
+    }
+
+    // 2. DNS Resolution Testing – fetch from multiple endpoints.
+    function testDNSResolution() {
+      const endpoints = [
+        "https://ipv4.icanhazip.com/",
+        "https://api.ipify.org/?format=json",
+        "https://checkip.amazonaws.com/"
+      ];
+      endpoints.forEach(url => {
+        fetch(url, { cache: "no-cache" })
+          .then(resp => resp.text())
+          .then(data => log("dnsResults", "Resolved from " + url + ": " + data.trim()))
+          .catch(err => log("dnsResults", "Error fetching from " + url + ": " + err, true));
+      });
+    }
+
+    // 3. Public IP Verification using ipify.
+    function verifyPublicIP() {
+      fetch('https://api.ipify.org?format=json')
+        .then(resp => resp.json())
+        .then(data => {
+          publicIpCollected = data.ip;
+          log("publicIPResults", "Public IP: <span class='ip'>" + data.ip + "</span>");
+        })
+        .catch(err => log("publicIPResults", "Error fetching public IP: " + err, true));
+    }
+
+    // 4. STUN Server Analysis – retrieve candidate details.
+    function analyzeStunServers() {
+      const RTCPeerConnection = window.RTCPeerConnection ||
+                                window.mozRTCPeerConnection ||
+                                window.webkitRTCPeerConnection;
+      if (!RTCPeerConnection) {
+        log("stunResults", "WebRTC is not supported.", true);
+        return;
+      }
+      const config = { iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun.services.mozilla.com" }
+      ]};
+      const pc = new RTCPeerConnection(config);
+      pc.createDataChannel("");
+      const servers = {};
+      pc.onicecandidate = event => {
+        if (!event || !event.candidate) { pc.close(); return; }
+        const candidate = event.candidate.candidate;
+        const match = candidate.match(/stun:([^ ]+)/);
+        const server = match ? match[1] : "unknown";
+        servers[server] = servers[server] || [];
+        servers[server].push(candidate);
+        if (servers[server].length === 1) {
+          log("stunResults", "STUN (" + server + "): " + candidate);
+        }
+      };
+      pc.createOffer()
+        .then(offer => pc.setLocalDescription(offer))
+        .catch(error => log("stunResults", "Error during STUN analysis: " + error, true));
+    }
+
+    // 5. VPN Security / Bypass Check – compare collected candidate IPs to public IP.
+    function validateVpnSecurity() {
+      const privateIpPatterns = [
+        /^10\./,
+        /^192\.168\./,
+        /^172\.(1[6-9]|2\d|3[0-1])\./
+      ];
+      const issues = [];
+      Object.keys(collectedWebRTCIps).forEach(ip => {
+        if (privateIpPatterns.some(regex => regex.test(ip))) {
+          issues.push("Local IP exposure: " + ip);
+        }
+        if (publicIpCollected && ip !== publicIpCollected) {
+          issues.push("Candidate mismatch: " + ip + " vs Public IP: " + publicIpCollected);
+        }
+      });
+      if (issues.length) {
+        log("vpnSecurityResults", "VPN security issues identified:");
+        issues.forEach(issue => log("vpnSecurityResults", issue));
+      } else {
+        log("vpnSecurityResults", "No VPN bypass indicators detected.");
+      }
+    }
+
+    // 6. WebSocket Connectivity – test secure connection.
+    function testWebSocket() {
+      const wsUrl = "wss://echo.websocket.events/";
+      try {
+        const ws = new WebSocket(wsUrl);
+        ws.onopen = () => {
+          log("websocketResults", "WebSocket connected to " + wsUrl);
+          ws.send("Network test");
+        };
+        ws.onmessage = event => {
+          log("websocketResults", "Echo response: " + event.data);
+          ws.close();
+        };
+        ws.onerror = err => log("websocketResults", "WebSocket error: " + err, true);
+      } catch (e) {
+        log("websocketResults", "WebSocket exception: " + e, true);
+      }
+    }
+
+    /************ Browser/System Fingerprinting ************/
+
+    // 7. Basic Browser Fingerprinting: time zone, language, platform, and user agent.
+    function fingerprintBrowser() {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const lang = navigator.language || navigator.userLanguage;
+      const platform = navigator.platform;
+      const agent = navigator.userAgent;
+      log("fingerprintResults", "Time Zone: " + tz);
+      log("fingerprintResults", "Language: " + lang);
+      log("fingerprintResults", "Platform: " + platform);
+      log("fingerprintResults", "User Agent: " + agent);
+    }
+
+    // 8. Canvas Fingerprint Test.
+    function canvasFingerprint() {
+      try {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        ctx.textBaseline = "top";
+        ctx.font = "14px 'Arial'";
+        ctx.fillStyle = "#f60";
+        ctx.fillRect(125,1,62,20);
+        ctx.fillStyle = "#069";
+        ctx.fillText("VPN Check", 2, 15);
+        ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+        ctx.fillText("VPN Check", 4, 17);
+        const dataURL = canvas.toDataURL();
+        log("canvasResults", "Canvas fingerprint: " + dataURL.substring(0,50) + "...");
+      } catch (e) {
+        log("canvasResults", "Canvas fingerprint error: " + e, true);
+      }
+    }
+
+    // 9. WebGL Fingerprint Test.
+    function webglFingerprint() {
+      try {
+        const canvas = document.createElement("canvas");
+        const gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
+        if (!gl) {
+          log("webglResults", "WebGL not supported", true);
+          return;
+        }
+        const debugInfo = gl.getExtension("WEBGL_debug_renderer_info");
+        const vendor = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+        const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+        log("webglResults", "WebGL Vendor: " + vendor);
+        log("webglResults", "WebGL Renderer: " + renderer);
+      } catch (e) {
+        log("webglResults", "WebGL fingerprint error: " + e, true);
+      }
+    }
+
+    // 10. Screen Resolution & Color Depth.
+    function checkScreen() {
+      const res = window.screen;
+      log("screenResults", "Screen Resolution: " + res.width + "x" + res.height);
+      log("screenResults", "Color Depth: " + res.colorDepth);
+    }
+
+    // 11. Installed Plugins Check.
+    function checkPlugins() {
+      if (navigator.plugins) {
+        const plugins = Array.from(navigator.plugins).map(p => p.name).join(", ");
+        log("pluginsResults", "Installed Plugins: " + plugins);
+      } else {
+        log("pluginsResults", "No plugin information available.");
+      }
+    }
+
+    /************ Additional Network Checks ************/
+
+    // 12. Latency Tests: Measure response times for various endpoints.
+    function latencyTest() {
+      const endpoints = [
+        "https://api.ipify.org?format=json",
+        "https://checkip.amazonaws.com/"
+      ];
+      endpoints.forEach(url => {
+        const start = Date.now();
+        fetch(url, { cache: "no-cache" })
+          .then(() => {
+            const latency = Date.now() - start;
+            log("latencyResults", "Latency to " + url + ": " + latency + " ms");
+          })
+          .catch(err => log("latencyResults", "Latency test error for " + url + ": " + err, true));
+      });
+    }
+
+    // 13. Reverse DNS Lookup – using external API (simulate; replace with your service).
+    function reverseDNSLookup() {
+      if (!publicIpCollected) {
+        log("reverseDNSResults", "Public IP not available for reverse DNS lookup.", true);
+        return;
+      }
+      // Example API endpoint; replace with your reverse DNS lookup service.
+      const url = "https://dns.google/resolve?name=" + publicIpCollected;
+      fetch(url)
+        .then(resp => resp.json())
+        .then(data => {
+          log("reverseDNSResults", "Reverse DNS data: " + JSON.stringify(data.Answer || data, null, 2));
+        })
+        .catch(err => log("reverseDNSResults", "Reverse DNS error: " + err, true));
+    }
+
+    // 14. IP Geolocation – using an external API.
+    function ipGeolocation() {
+      if (!publicIpCollected) {
+        log("geolocationResults", "Public IP not available for geolocation.", true);
+        return;
+      }
+      // Using ip-api.com as an example (limit 45 req/min).
+      fetch("http://ip-api.com/json/" + publicIpCollected)
+        .then(resp => resp.json())
+        .then(data => {
+          log("geolocationResults", "Geolocation: " + data.country + ", " + data.regionName + ", " + data.city);
+        })
+        .catch(err => log("geolocationResults", "Geolocation error: " + err, true));
+    }
+
+    // 15. HTTP Header Analysis – fetch headers from a secure endpoint.
+    function headerAnalysis() {
+      // Use fetch to a CORS-enabled endpoint that returns headers (simulate).
+      fetch("https://httpbin.org/headers")
+        .then(resp => resp.json())
+        .then(data => {
+          log("httpHeadersResults", "HTTP Headers: " + JSON.stringify(data.headers));
+        })
+        .catch(err => log("httpHeadersResults", "Header analysis error: " + err, true));
+    }
+
+    // 16. Additional Security Checks – miscellaneous tests.
+    function extraSecurityChecks() {
+      // Check for Do Not Track status.
+      const dnt = navigator.doNotTrack || window.doNotTrack || "unspecified";
+      log("extraChecksResults", "Do Not Track: " + dnt);
+      
+      // Check browser vendor.
+      const vendor = navigator.vendor || "unspecified";
+      log("extraChecksResults", "Browser Vendor: " + vendor);
+      
+      // Check for network information if available.
+      if (navigator.connection) {
+        log("extraChecksResults", "Effective Connection Type: " + navigator.connection.effectiveType);
+        log("extraChecksResults", "Downlink: " + navigator.connection.downlink + " Mb/s");
+      } else {
+        log("extraChecksResults", "Network Information API not supported.");
+      }
+    }
+
+    /************ Main Execution ************/
+    document.getElementById('startTest').addEventListener('click', () => {
+      clearResults();
+      // Execute network/leak tests
+      detectWebRTCIps();
+      testDNSResolution();
+      verifyPublicIP();
+      analyzeStunServers();
+      testWebSocket();
+      latencyTest();
+      // Delay reverse DNS and geolocation until public IP is available.
+      setTimeout(() => {
+        reverseDNSLookup();
+        ipGeolocation();
+      }, 2000);
+      // VPN security check (wait for async tests)
+      setTimeout(validateVpnSecurity, 4000);
+      
+      // Execute browser/system fingerprint tests
+      fingerprintBrowser();
+      canvasFingerprint();
+      webglFingerprint();
+      checkScreen();
+      checkPlugins();
+      headerAnalysis();
+      extraSecurityChecks();
+    });
+  </script>
+</body>
+</html>
